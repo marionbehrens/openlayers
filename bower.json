@@ -5,6 +5,7 @@
   "private": true,
   "dependencies": {
     "openlayers3": "https://github.com/openlayers/ol3/releases/download/v3.11.2/v3.11.2-dist.zip",
-    "jquery": "2.1.4"
+    "jquery": "2.1.4",
+    "bootstrap": "3.3.6"
   }
 }

@@ -49,7 +49,46 @@
         "type": "Point",
         "coordinates": [
           13.4104,
-          52.5280
+          52.528
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Rathau Spandau"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.2001,
+          52.5359
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Spandau"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.1976,
+          52.5348
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Zitadelle"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.217915296554567,
+          52.53753905005843
         ]
       }
     }
