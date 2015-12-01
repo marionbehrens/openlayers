@@ -1,0 +1,57 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hackescher Markt"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [[
+          3044.0,
+          -1973.0
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Oranienburger Strasse"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [[
+          2878.0,
+          -1735.0
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Bernauer Strasse"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [[
+          3214.0,
+          -1515.0
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Rosa-Luxenburg-Platz"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [[
+          3213.0,
+          -1820.0
+        ]]
+      }
+    }
+  ]
+}
