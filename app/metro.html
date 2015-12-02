@@ -10,19 +10,17 @@
     .popover-content {
       min-width: 180px;
     }
-    
     .map {
       width: 100%;
       height: 400px;
     }
-    
     .edit-form input {
       float: left;
     }
   </style>
   <link rel="stylesheet" href="../bower_components/openlayers3/ol.css" type="text/css">
   <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.min.css">
-  <script src="../bower_components/openlayers3/ol.js" type="text/javascript"></script>
+  <script src="../bower_components/openlayers3/ol-debug.js" type="text/javascript"></script>
   <script src="../bower_components/jquery/dist/jquery.min.js" type="text/javascript"></script>
   <script src="../bower_components/bootstrap/dist/js/bootstrap.min.js" type="text/javascript"></script>
   <script src="./polygon.js" type="text/javascript"></script>
@@ -36,11 +34,24 @@
   <div style="display: none;">
     <div id="popup" title="Welcome to ol3"></div>
   </div>
-  <div id="mouse-position"></div>
-  <div class="edit-form">
-    <input id="switch-projection" type="button" value="Switch" />
-    <input id="toggle-debug" type="checkbox" />Debug-Mode
-    <input id="toggle-select" type="checkbox" />Select-Mode
+  <div class="row">
+    <div class="col-md-2">
+      <div id="mouse-position"></div>
+    </div>
+    <div class="col-md-4">
+      <div id="draw-interaction-points"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-1">
+      <input id="switch-projection" type="button" value="Switch" />
+    </div>
+    <div class="col-md-1">
+      <input id="toggle-debug" type="checkbox" /> Debug-Mode
+    </div>
+    <div class="col-md-1">
+      <input id="toggle-select" type="checkbox" /> Select-Mode
+    </div>
   </div>
   <script type="text/javascript">
 
@@ -121,6 +132,7 @@
           currentLayers = [];
         }
         removePopup();
+        removeInteraction();
       } else {
         map = new ol.Map({
           target: 'map',
@@ -158,21 +170,66 @@
     }
 
 
-    var draw;
+    var drawInteraction;
+    var drawOverlay;
+    var drawInteractionFeatures;
+    var drawInteractionModify;
 
     function addInteraction() {
       if (map) {
-        draw = new ol.interaction.Draw({
-          type: 'Polygon',
-          maxPoints: 10
+        var source = new ol.source.Vector({ features: drawInteractionFeatures });
+        drawOverlay = new ol.layer.Vector({
+          source: source,
+          style: new ol.style.Style({
+            fill: new ol.style.Fill({
+              color: 'rgba(255, 255, 255, 0.2)'
+            }),
+            stroke: new ol.style.Stroke({
+              color: '#ffcc33',
+              width: 2
+            }),
+            image: new ol.style.Circle({
+              radius: 7,
+              fill: new ol.style.Fill({
+                color: '#ffcc33'
+              })
+            })
+          })
         });
-        map.addInteraction(draw);
+        drawOverlay.setMap(map); // instead of: map.addLayer(drawOverlay);
+        drawInteractionFeatures = new ol.Collection();
+        drawInteractionFeatures.on('add', function(evt) {
+          // drawInteractionFeatures.forEach(function(feature){
+          console.log(evt.element.getGeometry().getCoordinates());  
+        });
+        // 'draw-interaction-points'
+        drawInteraction = new ol.interaction.Draw({
+          type: 'Polygon',
+          features: drawInteractionFeatures,
+          source: source
+        });
+        map.addInteraction(drawInteraction);
+        drawInteractionModify = new ol.interaction.Modify({
+          features: drawInteractionFeatures,
+          // the SHIFT key must be pressed to delete vertices, so
+          // that new vertices can be drawn at the same position
+          // of existing vertices
+          deleteCondition: function(event) {
+            return ol.events.condition.shiftKeyOnly(event) &&
+                ol.events.condition.singleClick(event);
+          }
+        });
+        map.addInteraction(drawInteractionModify);
       }
     }
 
     function removeInteraction() {
       if (map) {
-        map.removeInteraction(draw);
+        map.removeInteraction(drawInteraction);
+        map.removeInteraction(drawInteractionModify);
+        if (drawOverlay) {
+          drawOverlay.setMap(null); // instead of: map.removeLayer(drawOverlay);
+        }
       }
     }
 
@@ -184,6 +241,8 @@
     });
 
     var isDebug = false;
+    var isSelection = false;
+
     $('#toggle-debug').prop("checked", false);
 
     $('#toggle-debug').click(function() {
@@ -194,8 +253,11 @@
 
     $('#toggle-select').click(function() {
       if ($('#toggle-select').prop("checked")) {
+        isSelection = true;
+        removePopup();
         addInteraction();
       } else {
+        isSelection = false;
         removeInteraction();
       }
     });
@@ -225,25 +287,27 @@
 
     // display popup on click
     map.on('click', function(evt) {
-      var element = popup.getElement();
-      var feature = map.forEachFeatureAtPixel(evt.pixel,
-        function(feature, layer) {
-          return feature;
+      if (!isSelection) {
+        var element = popup.getElement();
+        var feature = map.forEachFeatureAtPixel(evt.pixel,
+          function(feature, layer) {
+            return feature;
+          }
+        );
+        if (feature) {
+          var coord = evt.coordinate;
+          popup.setPosition(coord);
+          var geometry = feature.getGeometry();
+          $(element).popover({
+            'placement': 'top',
+            'animation': false,
+            'html': true,
+            'content': '<p>' + feature.getProperties()['name'] + '</p>'
+          });
+          $(element).popover('show');
+        } else {
+          removePopup();
         }
-      );
-      if (feature) {
-        var coord = evt.coordinate;
-        popup.setPosition(coord);
-        var geometry = feature.getGeometry();
-        $(element).popover({
-          'placement': 'top',
-          'animation': false,
-          'html': true,
-          'content': '<p>' + feature.getProperties()['name'] + '</p>'
-        });
-        $(element).popover('show');
-      } else {
-        removePopup();
       }
     });
 
