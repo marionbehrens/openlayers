@@ -26,7 +26,7 @@
   <script src="./polygon.js" type="text/javascript"></script>
   <script src="./points.js" type="text/javascript"></script>
   <script src="./geojson.js" type="text/javascript"></script>
-  <!-- script src="./selection.js" type="text/javascript"></script -->
+  <script src="./selection.js" type="text/javascript"></script>
 </head>
 
 <body>
@@ -38,12 +38,12 @@
     <div class="col-md-2">
       <div id="mouse-position"></div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-10">
       <div id="draw-interaction-points"></div>
     </div>
   </div>
   <div class="row">
-    <div class="col-md-1">
+    <div class="col-md-1  col-md-offset-1">
       <input id="switch-projection" type="button" value="Switch" />
     </div>
     <div class="col-md-1">
@@ -121,17 +121,14 @@
       element: document.getElementById('popup')
     });
 
-    var currentLayers = [];
+    var geoJsonLayer;
 
     var switchProjection = function() {
       if (map) {
-        if (currentLayers && (currentLayers.length > 0)) {
-          currentLayers.forEach(function(layer) {
-            map.removeLayer(layer);
-          });
-          currentLayers = [];
-        }
+        $('#toggle-debug').prop("checked", false);
+        isDebug = false;
         removePopup();
+        $('#toggle-select').prop("checked", false);
         removeInteraction();
       } else {
         map = new ol.Map({
@@ -147,92 +144,102 @@
         map.addOverlay(popup);
       }
       if (projection == 'PIXELS') {
+        map.removeLayer(imageLayer);
+        map.removeLayer(geoJsonLayer);
         map.setView(osmView);
         mousePosition.setProjection(ol.proj.get('EPSG:4326'));
-        currentLayers.push(osmLayer);
-        // currentLayers.push(getPolygonLayer('EPSG:3857'));
-        currentLayers.push(getGeoJsonLayer('EPSG:3857'));
-        // currentLayers.push(vectorLayer);
+        geoJsonLayer = getGeoJsonLayer('EPSG:3857');
+        map.addLayer(osmLayer);
+        map.addLayer(geoJsonLayer);
         projection = 'EPSG:3857';
       } else {
+        map.removeLayer(osmLayer);
+        map.removeLayer(geoJsonLayer);
         map.setView(imageView);
         mousePosition.setProjection(ol.proj.get('PIXELS'));
-        currentLayers.push(imageLayer);
-        // currentLayers.push(getPolygonLayer('PIXELS'));
-        currentLayers.push(getGeoJsonLayer('PIXELS'));
-        // currentLayers.push(vectorLayer);
+        map.addLayer(imageLayer);
+        geoJsonLayer = getGeoJsonLayer('PIXELS');
+        map.addLayer(geoJsonLayer);
         map.getView().fit(imageMapExtent, map.getSize());
         projection = 'PIXELS';
       }
-      currentLayers.forEach(function(layer) {
-        map.addLayer(layer);
-      });
     }
 
-
-    var drawInteraction;
-    var drawOverlay;
-    var drawInteractionFeatures;
-    var drawInteractionModify;
+    var drawInteractionFeatures = new ol.Collection();
+    drawInteractionFeatures.on('add', function(evt) {
+      var element = document.getElementById('draw-interaction-points');
+      var isFirst = true;
+      geoJsonLayer.getSource().forEachFeature(function(feature) {
+        if (isPointInPolygon(feature.getGeometry().getCoordinates(), evt.element.getGeometry().getCoordinates()[0])) {
+          if (isFirst && element.hasChildNodes()) {
+            element.appendChild(document.createElement('br'));
+          }
+          isFirst = false;
+          var content = document.createTextNode(feature.getProperties()['name'] + ';');
+          element.appendChild(content);
+        }
+      });
+      if (isFirst) {
+        element.appendChild(document.createElement('br'));
+        element.appendChild(document.createTextNode('-'));
+      }
+    });
+    var drawOverlaySource = new ol.source.Vector({ features: drawInteractionFeatures });
+    var drawOverlay = new ol.layer.Vector({
+      source: drawOverlaySource,
+      style: new ol.style.Style({
+        fill: new ol.style.Fill({
+          color: 'rgba(255, 255, 255, 0.2)'
+        }),
+        stroke: new ol.style.Stroke({
+          color: '#ffcc33',
+          width: 2
+        }),
+        image: new ol.style.Circle({
+          radius: 7,
+          fill: new ol.style.Fill({
+            color: '#ffcc33'
+          })
+        })
+      })
+    });
+    var drawInteraction = new ol.interaction.Draw({
+      type: 'Polygon',
+      features: drawInteractionFeatures
+    });
+    var drawInteractionModify = new ol.interaction.Modify({
+      features: drawInteractionFeatures,
+      // the SHIFT key must be pressed to delete vertices, so
+      // that new vertices can be drawn at the same position
+      // of existing vertices
+      deleteCondition: function(event) {
+        return ol.events.condition.shiftKeyOnly(event) &&
+            ol.events.condition.singleClick(event);
+      }
+    });
 
     function addInteraction() {
+      isDebug = false;
       if (map) {
-        var source = new ol.source.Vector({ features: drawInteractionFeatures });
-        drawOverlay = new ol.layer.Vector({
-          source: source,
-          style: new ol.style.Style({
-            fill: new ol.style.Fill({
-              color: 'rgba(255, 255, 255, 0.2)'
-            }),
-            stroke: new ol.style.Stroke({
-              color: '#ffcc33',
-              width: 2
-            }),
-            image: new ol.style.Circle({
-              radius: 7,
-              fill: new ol.style.Fill({
-                color: '#ffcc33'
-              })
-            })
-          })
-        });
         drawOverlay.setMap(map); // instead of: map.addLayer(drawOverlay);
-        drawInteractionFeatures = new ol.Collection();
-        drawInteractionFeatures.on('add', function(evt) {
-          // drawInteractionFeatures.forEach(function(feature){
-          console.log(evt.element.getGeometry().getCoordinates());  
-        });
         // 'draw-interaction-points'
-        drawInteraction = new ol.interaction.Draw({
-          type: 'Polygon',
-          features: drawInteractionFeatures,
-          source: source
-        });
         map.addInteraction(drawInteraction);
-        drawInteractionModify = new ol.interaction.Modify({
-          features: drawInteractionFeatures,
-          // the SHIFT key must be pressed to delete vertices, so
-          // that new vertices can be drawn at the same position
-          // of existing vertices
-          deleteCondition: function(event) {
-            return ol.events.condition.shiftKeyOnly(event) &&
-                ol.events.condition.singleClick(event);
-          }
-        });
         map.addInteraction(drawInteractionModify);
       }
     }
 
     function removeInteraction() {
+      drawInteractionFeatures.clear();
       if (map) {
         map.removeInteraction(drawInteraction);
         map.removeInteraction(drawInteractionModify);
-        if (drawOverlay) {
-          drawOverlay.setMap(null); // instead of: map.removeLayer(drawOverlay);
-        }
+        drawOverlay.setMap(null); // instead of: map.removeLayer(drawOverlay);
+      }
+      var element = document.getElementById('draw-interaction-points');
+      while (element.firstChild) {
+        element.removeChild(element.firstChild);
       }
     }
-
 
     switchProjection();
 
@@ -241,23 +248,16 @@
     });
 
     var isDebug = false;
-    var isSelection = false;
-
-    $('#toggle-debug').prop("checked", false);
 
     $('#toggle-debug').click(function() {
       isDebug = $('#toggle-debug').prop("checked");
     });
 
-    $('#toggle-select').prop("checked", false);
-
     $('#toggle-select').click(function() {
       if ($('#toggle-select').prop("checked")) {
-        isSelection = true;
         removePopup();
         addInteraction();
       } else {
-        isSelection = false;
         removeInteraction();
       }
     });
@@ -287,7 +287,13 @@
 
     // display popup on click
     map.on('click', function(evt) {
-      if (!isSelection) {
+      var isDrawInteractionActive = false;
+      map.getInteractions().forEach(function(interaction) {
+        if (drawInteraction == interaction) {
+          isDrawInteractionActive = true;
+        }
+      });
+      if (!isDrawInteractionActive) {
         var element = popup.getElement();
         var feature = map.forEachFeatureAtPixel(evt.pixel,
           function(feature, layer) {
