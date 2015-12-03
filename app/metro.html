@@ -43,7 +43,10 @@
     <div class="col-md-2">
       <div id="mouse-position"></div>
     </div>
-    <div class="col-md-10">
+    <div class="col-md-3">
+      <div id="map-resoltion"></div>
+    </div>
+    <div class="col-md-7">
       <div id="draw-interaction-points"></div>
     </div>
   </div>
@@ -168,6 +171,24 @@
         map.getView().fit(imageMapExtent, map.getSize());
         projection = 'PIXELS';
       }
+      removeDebugResolution();
+      map.getView().on('change:resolution', function(evt) {
+        debugResolution(evt.oldValue, map.getView().getResolution());
+      });
+    }
+
+    function removeDebugResolution(element) {
+      if (!element) element = document.getElementById('map-resoltion');
+      while (element.firstChild) {
+        element.removeChild(element.firstChild);
+      }
+    }
+
+    function debugResolution(oldValue, newValue) {
+      var element = document.getElementById('map-resoltion');
+      removeDebugResolution(element);
+      var content = document.createTextNode('Resolution: ' + oldValue + ' -> ' + newValue);
+      element.appendChild(content);
     }
 
     var drawInteractionFeatures = new ol.Collection();
