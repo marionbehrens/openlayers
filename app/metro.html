@@ -7,9 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style type="text/css">
-    .popover-content {
-      min-width: 180px;
-    }
     .map {
       width: 100%;
       height: 400px;
@@ -20,13 +17,16 @@
   </style>
   <link rel="stylesheet" href="../bower_components/openlayers3/ol.css" type="text/css">
   <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="./chart.css">
   <script src="../bower_components/openlayers3/ol-debug.js" type="text/javascript"></script>
   <script src="../bower_components/jquery/dist/jquery.min.js" type="text/javascript"></script>
   <script src="../bower_components/bootstrap/dist/js/bootstrap.min.js" type="text/javascript"></script>
+  <script src="../bower_components/d3/d3.js" type="text/javascript"></script>
   <script src="./polygon.js" type="text/javascript"></script>
   <script src="./points.js" type="text/javascript"></script>
   <script src="./geojson.js" type="text/javascript"></script>
   <script src="./selection.js" type="text/javascript"></script>
+  <script src="./chart.js" type="text/javascript"></script>
 </head>
 
 <body>
@@ -34,9 +34,11 @@
   <div style="display: none;">
     <div id="popup" title="Feature"></div>
     </div>
-    <div id="few-feature-popup-content" style="display:none;">
+    <div id="few-feature-popup-content" style="display: none;">
       <input id='new-feature-name' value='' type='text'></input>
       <input id='new-feature-submit' value='Submit' type='button' onclick='submitNewFeature();'></input>
+    </div>
+    <div id="feature-chart">
     </div>
   </div>
   <div class="row">
@@ -171,14 +173,13 @@
         map.getView().fit(imageMapExtent, map.getSize());
         projection = 'PIXELS';
       }
-      removeDebugResolution();
+      removeChildrenFromElement(document.getElementById('map-resoltion'));
       map.getView().on('change:resolution', function(evt) {
         debugResolution(evt.oldValue, map.getView().getResolution());
       });
     }
 
-    function removeDebugResolution(element) {
-      if (!element) element = document.getElementById('map-resoltion');
+    function removeChildrenFromElement(element) {
       while (element.firstChild) {
         element.removeChild(element.firstChild);
       }
@@ -186,7 +187,7 @@
 
     function debugResolution(oldValue, newValue) {
       var element = document.getElementById('map-resoltion');
-      removeDebugResolution(element);
+      removeChildrenFromElement(element);
       var content = document.createTextNode('Resolution: ' + oldValue + ' -> ' + newValue);
       element.appendChild(content);
     }
@@ -261,10 +262,7 @@
         map.removeInteraction(drawInteractionModify);
         drawOverlay.setMap(null); // instead of: map.removeLayer(drawOverlay);
       }
-      var element = document.getElementById('draw-interaction-points');
-      while (element.firstChild) {
-        element.removeChild(element.firstChild);
-      }
+      removeChildrenFromElement(document.getElementById('draw-interaction-points'));
     }
 
     switchProjection();
@@ -328,6 +326,7 @@
 
     // display popup on click
     map.on('click', function(evt) {
+      removePopup();
       var isDrawInteractionActive = false;
       map.getInteractions().forEach(function(interaction) {
         if (drawInteraction == interaction) {
@@ -345,21 +344,22 @@
           var coord = evt.coordinate;
           popup.setPosition(coord);
           var geometry = feature.getGeometry();
+          createChart(feature);
           $(element).popover({
             'placement': 'top',
-            'animation': false,
+            'animation': true,
             'html': true,
-            'content': '<p>' + feature.getProperties()['name'] + '</p>'
+            'content': document.getElementById('feature-chart').children
           });
           $(element).popover('show');
-        } else {
-          removePopup();
         }
       }
     });
 
     var removePopup = function() {
       $(popup.getElement()).popover('destroy');
+      removeChildrenFromElement(popup.getElement());
+      removeChildrenFromElement(document.getElementById('feature-chart'));
     }
 
     // change mouse cursor when over marker
