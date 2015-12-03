@@ -32,7 +32,12 @@
 <body>
   <div id="map" class="map"></div>
   <div style="display: none;">
-    <div id="popup" title="Welcome to ol3"></div>
+    <div id="popup" title="Feature"></div>
+    </div>
+    <div id="few-feature-popup-content" style="display:none;">
+      <input id='new-feature-name' value='' type='text'></input>
+      <input id='new-feature-submit' value='Submit' type='button' onclick='submitNewFeature();'></input>
+    </div>
   </div>
   <div class="row">
     <div class="col-md-2">
@@ -250,6 +255,7 @@
     var isDebug = false;
 
     $('#toggle-debug').click(function() {
+      removePopup();
       isDebug = $('#toggle-debug').prop("checked");
     });
 
@@ -262,21 +268,22 @@
       }
     });
 
+    var currPopupCoord;
+
     map.on('dblclick', function(evt) {
-      console.log(isDebug);
       if (isDebug) {
         var element = popup.getElement();
-        var coord = evt.coordinate;
+        currPopupCoord = evt.coordinate;
         removePopup();
-        popup.setPosition(coord);
+        popup.setPosition(currPopupCoord);
         if (projection == 'EPSG:3857') {
-          coord = ol.proj.transform(coord, 'EPSG:3857', 'EPSG:4326');
+          currPopupCoord = ol.proj.transform(currPopupCoord, 'EPSG:3857', 'EPSG:4326');
         }
         $(element).popover({
           'placement': 'top',
           'animation': false,
           'html': true,
-          'content': '<p>{<br>&nbsp;\"type\":\"Feature\",<br>&nbsp;\"properties\": {<br>&nbsp;&nbsp;\"name\": \"XYZ\"<br>&nbsp;},<br>&nbsp;\"geometry\": {<br>&nbsp;&nbsp;\"type\": \"Point\",<br>&nbsp;&nbsp;\"coordinates\": [<br>&nbsp;&nbsp;&nbsp;' + coord[0] + ',<br>&nbsp;&nbsp;&nbsp;' + coord[1] + '<br>&nbsp;&nbsp;]<br>&nbsp;}<br>}</p>'
+          'content': document.getElementById('few-feature-popup-content').innerHTML
         });
         $(element).popover('show');
         return false;
@@ -284,6 +291,19 @@
         return true;
       }
     });
+
+    function submitNewFeature() {
+      if (currPopupCoord) {
+        console.log("new-feature-submit");
+        var featureName = document.getElementById('new-feature-name').value;
+        var newFeature = new ol.Feature({
+          geometry: new ol.geom.Point(currPopupCoord),
+          name: featureName
+        });
+        addFeatureToGeoJson(newFeature, geoJsonLayer, projection);
+        removePopup();
+      }
+    };
 
     // display popup on click
     map.on('click', function(evt) {
@@ -318,8 +338,7 @@
     });
 
     var removePopup = function() {
-      var element = popup.getElement();
-      $(element).popover('destroy');
+      $(popup.getElement()).popover('destroy');
     }
 
     // change mouse cursor when over marker

@@ -51,3 +51,35 @@ var getGeoJsonLayer = function(projection) {
     )
   });
 };
+
+function addFeatureToGeoJson(feature, geoJsonLayer, projection) {
+
+  var url = (projection == 'PIXELS') ? 'markersWithPixelCoords.json' : 'markersWithGlobalCoords.json';
+  $.ajax(url).then(function(response) {
+    var features = format.readFeatures(response);
+    features.push(feature);
+    console.log(features);
+
+    var sendString = format.writeFeatures(features);
+    var postUrl = (projection == 'PIXELS') ? '/pixel' : '/global';
+
+    $.ajax({
+      type : "POST",
+      url: postUrl,
+      contentType: "application/json; charset=utf-8",
+      dataType : 'json', // expecting JSON to be returned
+      data: sendString,
+      success : function(){
+        console.log("success");
+        geoJsonLayer.setSource((projection == 'PIXELS') ? 
+          getGeoJsonSource('markersWithPixelCoords.json', 'PIXELS', projectionOptionsForPixels) : 
+          getGeoJsonSource('markersWithGlobalCoords.json', 'EPSG:3857', projectionOptionsForEPSG)
+        );
+      },
+      error : function(){
+        console.log("error");
+      }
+    });
+  });
+
+}
