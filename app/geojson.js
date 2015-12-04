@@ -15,28 +15,28 @@ var getText = function(feature) {
 }
 
 var getScale = function(resolution, projection) {
-  if (projection == 'PIXELS') 
+  if (isPixelProjection(projection)) 
     return (2.0 / Math.pow(resolution, 0.8));
   else
     return (1.5 / Math.pow(resolution, 0.2));
 }
 
 var showTextLabel = function(resolution, projection) {
-  if (projection == 'PIXELS') 
+  if (isPixelProjection(projection)) 
     return (resolution < 2.0);
   else 
     return (resolution < 10.0);
 }
 
 var getFont = function(projection) {
-  if (projection == 'PIXELS') 
+  if (isPixelProjection(projection)) 
     return '16px sans-serif';
   else 
     return '12px sans-serif';
 }
 
 var getTextOffsetY = function(projection) {
-  if (projection == 'PIXELS') 
+  if (isPixelProjection(projection)) 
     return -12;
   else 
     return -10;
@@ -49,7 +49,9 @@ var getText = function(feature, resolution, projection) {
 
 var format = new ol.format.GeoJSON();
 
-var getGeoJsonSource = function(url, projection, projectionOptions) {
+var getGeoJsonSource = function(projection) {
+  var url = getUrl(projection);
+  var projectionOptions = getProjectionOptions(projection);
   var geoJsonSource = new ol.source.Vector({
     loader: function(extent, resolution, projection) {
       $.ajax(url).then(function(response) {
@@ -64,19 +66,38 @@ var getGeoJsonSource = function(url, projection, projectionOptions) {
   return geoJsonSource;
 }
 
-var projectionOptionsForPixels = {};
+function isPixelProjection(projection) {
+  return (projection.substring(0, 'PIXELS'.length) === 'PIXELS');
+}
 
-var projectionOptionsForEPSG = {
-  dataProjection: 'EPSG:4326',
-  featureProjection: 'EPSG:3857'
-};
+function getProjectionName(projection) {
+  return (projection.substring(projection.indexOf(':') + 1));
+}
+
+function getProjectionOptions(projection) {
+  if (isPixelProjection(projection)) {
+    return {};
+  }
+  else {
+    return {
+      dataProjection: 'EPSG:4326',
+      featureProjection: 'EPSG:3857'
+    };
+  }
+}
+
+function getUrl(projection) {
+  if (isPixelProjection(projection)) {
+    return getProjectionName(projection) + '/markersWithPixelCoords.json';
+  }
+  else {
+    return 'markersWithGlobalCoords.json';
+  }
+}
 
 var getGeoJsonLayer = function(projection) {
   return new ol.layer.Vector({
-    source: ((projection == 'PIXELS') ? 
-      getGeoJsonSource('markersWithPixelCoords.json', 'PIXELS', projectionOptionsForPixels) : 
-      getGeoJsonSource('markersWithGlobalCoords.json', 'EPSG:3857', projectionOptionsForEPSG)
-    ),
+    source: getGeoJsonSource(projection),
     style: function(feature, resolution) {
       style.getText().setText(getText(feature, resolution, projection));
       var scale = getScale(resolution, projection);
@@ -91,14 +112,15 @@ var getGeoJsonLayer = function(projection) {
 
 function addFeatureToGeoJson(feature, geoJsonLayer, projection) {
 
-  var url = (projection == 'PIXELS') ? 'markersWithPixelCoords.json' : 'markersWithGlobalCoords.json';
+  var url = getUrl(projection);
+
   $.ajax(url).then(function(response) {
     var features = format.readFeatures(response);
     features.push(feature);
     console.log(features);
 
     var sendString = format.writeFeatures(features);
-    var postUrl = (projection == 'PIXELS') ? '/pixel' : '/global';
+    var postUrl = (isPixelProjection(projection)) ? '/pixel' : '/global';
 
     $.ajax({
       type : "POST",
@@ -108,10 +130,7 @@ function addFeatureToGeoJson(feature, geoJsonLayer, projection) {
       data: sendString,
       success : function(){
         console.log("success");
-        geoJsonLayer.setSource((projection == 'PIXELS') ? 
-          getGeoJsonSource('markersWithPixelCoords.json', 'PIXELS', projectionOptionsForPixels) : 
-          getGeoJsonSource('markersWithGlobalCoords.json', 'EPSG:3857', projectionOptionsForEPSG)
-        );
+        geoJsonLayer.setSource(getGeoJsonSource(projection));
       },
       error : function(){
         console.log("error");

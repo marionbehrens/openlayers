@@ -1,0 +1,12 @@
+[{
+  "extent": [0.000000, -4437.000000, 6445.000000, 0.000000],
+  "minResolution": 0,
+  "maxResolution": 5,
+  "name": "Netzplan"
+},
+{
+  "extent": [0.000000, -4096.000000, 8192.000000, 0.000000],
+  "minResolution": 0,
+  "maxResolution": 5,
+  "name": "Luftbild"
+}]
