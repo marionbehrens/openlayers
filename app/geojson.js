@@ -110,6 +110,14 @@ var getGeoJsonLayer = function(projection) {
   });
 };
 
+function getCoordinatesFilePath(projection) {
+  if (isPixelProjection(projection)) {
+    return 'app/' + getProjectionName(projection) + '/markersWithPixelCoords.json';
+  } else {
+    return 'app/markersWithGlobalCoords.json';
+  }
+}
+
 function addFeatureToGeoJson(feature, geoJsonLayer, projection) {
 
   var url = getUrl(projection);
@@ -117,17 +125,16 @@ function addFeatureToGeoJson(feature, geoJsonLayer, projection) {
   $.ajax(url).then(function(response) {
     var features = format.readFeatures(response);
     features.push(feature);
-    console.log(features);
 
     var sendString = format.writeFeatures(features);
-    var postUrl = (isPixelProjection(projection)) ? '/pixel' : '/global';
+    var sendObject = {'file': getCoordinatesFilePath(projection), 'content': sendString};
 
     $.ajax({
       type : "POST",
-      url: postUrl,
+      url: '/newFeature',
       contentType: "application/json; charset=utf-8",
       dataType : 'json', // expecting JSON to be returned
-      data: sendString,
+      data: JSON.stringify(sendObject),
       success : function(){
         console.log("success");
         geoJsonLayer.setSource(getGeoJsonSource(projection));

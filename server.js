@@ -24,23 +24,11 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-app.post('/global', function(req, res) {
+app.post('/newFeature', function(req, res) {
   console.log(req.body);
-  fs.writeFile('app/markersWithGlobalCoords.json', JSON.stringify(req.body), function (err) {
+  console.log('Writing content to ' + req.body.file + '...');
+  fs.writeFile(req.body.file, req.body.content, function (err) {
     if (err) return console.log(err);
-    console.log('req.body > markersWithGlobalCoords.json');
-  });
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end('{"success" : "Updated Successfully", "status" : 200}');
-  // res.json({"done":"yes"});
-  //OR res.render('account');
-});
-
-app.post('/pixel', function(req, res) {
-  console.log(req.body);
-  fs.writeFile('app/markersWithPixelCoords.json', JSON.stringify(req.body), function (err) {
-    if (err) return console.log(err);
-    console.log('req.body > markersWithPixelCoords.json');
   });
   res.writeHead(200, { "Content-Type": "application/json" });
   res.end('{"success" : "Updated Successfully", "status" : 200}');

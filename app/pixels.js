@@ -23,10 +23,6 @@ var imageView;
 
 function imageChanged(projection) {
 
-  console.log("image Changed");
-
-  console.log(projection);
-
   var config = setup[0];
 
   setup.forEach(function(c) {

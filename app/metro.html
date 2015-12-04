@@ -133,8 +133,6 @@
         map.addOverlay(popup);
       }
       var newProjection = document.getElementById('switch-projection').value;
-      console.log("old Projection");
-      console.log(projection);
       if (imageLayer) {
         map.removeLayer(imageLayer);
       }
@@ -143,8 +141,6 @@
       }
       map.removeLayer(osmLayer);
       if (isPixelProjection(newProjection)) {
-        console.log("new PIXELS Projection");
-        console.log(newProjection);
         imageChanged(newProjection);
         map.setView(imageView);
         mousePosition.setProjection(ol.proj.get('PIXELS'));
@@ -300,7 +296,6 @@
 
     function submitNewFeature() {
       if (currPopupCoord) {
-        console.log("new-feature-submit");
         var featureName = document.getElementById('new-feature-name').value;
         var newFeature = new ol.Feature({
           geometry: new ol.geom.Point(currPopupCoord),
