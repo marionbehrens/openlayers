@@ -14,6 +14,12 @@
     .edit-form input {
       float: left;
     }
+    .feature-chart {
+      float: left;
+    }
+    .popover {
+      max-width: 420px !important;
+    }
   </style>
   <link rel="stylesheet" href="../bower_components/openlayers3/ol.css" type="text/css">
   <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.min.css">
@@ -32,13 +38,13 @@
 <body>
   <div id="map" class="map"></div>
   <div style="display: none;">
-    <div id="popup" title="Feature"></div>
+    <div id="popup"></div>
     </div>
     <div id="few-feature-popup-content" style="display: none;">
       <input id='new-feature-name' value='' type='text'></input>
       <input id='new-feature-submit' value='Submit' type='button' onclick='submitNewFeature();'></input>
     </div>
-    <div id="feature-chart">
+    <div id="feature-chart"">
     </div>
   </div>
   <div class="row">

@@ -1,13 +1,14 @@
 var margin = {
-    top: 10,
-    right: 10,
-    bottom: 25,
+    top: 24,
+    right: 15,
+    bottom: 20,
     left: 30
   },
-  width = 360 - margin.left - margin.right,
-  height = 200 - margin.top - margin.bottom;
+  width = 400 - margin.left - margin.right,
+  height = 220 - margin.top - margin.bottom;
 
-var parseDate = d3.time.format("%d-%b-%y").parse;
+var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse; 
+// formatDate = d3.time.format("%m.%y"); // %d.%m.%Y %H:%M
 
 var x = d3.time.scale()
   .range([0, width]);
@@ -17,7 +18,9 @@ var y = d3.scale.linear()
 
 var xAxis = d3.svg.axis()
   .scale(x)
-  .orient("bottom");
+  .orient("bottom")
+  .ticks(4)
+  .tickFormat(d3.time.format("%d.%m.%y"));
 
 var yAxis = d3.svg.axis()
   .scale(y)
@@ -43,26 +46,26 @@ function createChart(feature) {
 
   d3.json('data.json', function(error, data) {
     if (error) throw error;
-
     data.forEach(function(d) {
       d.date = parseDate(d.date);
       d.value = +d.value;
     });
-
     x.domain(d3.extent(data, function(d) {
       return d.date;
     }));
     y.domain(d3.extent(data, function(d) {
       return d.value;
     }));
-
+    svg.append("text")
+       .attr("x", (width / 2))             
+       .attr("y", 0 - (margin.top / 2))
+       .attr("text-anchor", "middle")  
+       .style("font-size", "16px") 
+       .text(feature.getProperties()['name']);
     svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
-      .call(xAxis)
-      .append("text")
-      .text(feature.getProperties()['name']);
-
+      .call(xAxis);
     svg.append("g")
       .attr("class", "y axis")
       .call(yAxis)
@@ -72,7 +75,6 @@ function createChart(feature) {
       .attr("dy", ".71em")
       .style("text-anchor", "end")
       .text("Value");
-
     svg.append("path")
       .datum(data)
       .attr("class", "line")
